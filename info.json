@@ -1,0 +1,11 @@
+{
+    "name": "robot-recall",
+    "version": "0.1.0",
+    "title": "Robot Recall",
+    "author": "",
+    "contact": "",
+    "homepage": "",
+    "factorio_version": "0.18",
+    "dependencies": ["base >= 0.18"],
+    "description": "."
+}
