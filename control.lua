@@ -333,7 +333,7 @@ function updateTeleportJobs(event)
                                   defines.inventory.roboport_robot) or
                                   e.source
                                       .get_inventory(defines.inventory.chest)
-            if (e.destination.get_inventory(1).can_insert(e.itemstack)) then
+            if (e.itemstack.valid_for_read and e.destination.get_inventory(1).can_insert(e.itemstack)) then
                 local amnt = e.destination.insert(e.itemstack)
                 if (amnt == e.itemstack.count) then
                     e.itemstack.clear()
