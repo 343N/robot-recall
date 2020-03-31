@@ -2,6 +2,7 @@ local teleportQueue = {}
 local teleportQueueEntryCount = 0
 local updateRateBoost = false
 local updateRate = {60, 10}
+local hasChanged = true
 local openedGUIPlayers = {}
 local updateGUIEveryTick = false
 
@@ -78,7 +79,7 @@ function addToTeleportQueue(source, destination, itemstack)
     --                "to teleport queue")
 
     if (not can_insert) then return end
-        -- game.print("Can't recall, no space!") 
+    -- game.print("Can't recall, no space!") 
 
     local queueEntry = {
         source = source,
@@ -161,18 +162,6 @@ function updateRecallGuiList(baseGui, robots, logistic_network)
     local count = 0
     for k, v in pairs(robots) do
 
-        local totalProgress = {}
-        for _, e in pairs(teleportQueue) do
-            -- if (teleportQueue.destination) then
-            -- end
-            if (k == e.itemstack.name) then
-                local currentTick = game.tick - e.startTick
-                local finishTick = e.endTick - e.startTick
-                -- game.print("TELEPORT QUEUE LOl")
-                table.insert(totalProgress, currentTick / finishTick)
-            end
-        end
-
         count = count + 1
         local flow = baseGui['robot-recall-chest']['frame']['scrollpane'][k] or
                          scrollPane.add({type = "flow", name = k})
@@ -196,15 +185,6 @@ function updateRecallGuiList(baseGui, robots, logistic_network)
                     visible = false,
                     value = 0
                 })
-
-        if (table_size(totalProgress) ~= 0) then
-            progressbar.visible = true
-            local newprog = getAverage(totalProgress)
-            progressbar.value = math.max(newprog, progressbar.value)
-        else
-            progressbar.visible = false
-            progressbar.value = 0
-        end
 
         if (ply.opened and ply.opened.name == "robot-recall-chest") then
             if (ply.opened.get_inventory(defines.inventory.chest).can_insert(
@@ -251,6 +231,41 @@ function updateRecallGuiList(baseGui, robots, logistic_network)
         scrollPane['no-robots-label'].valid) then
         scrollPane['no-robots-label'].destroy()
     end
+end
+
+function updateRecallGuiListProgress(baseGui, robots, logistic_network)
+    if (not baseGui or not baseGui['robot-recall-chest']) then return end
+
+    local scrollPane = baseGui['robot-recall-chest']['frame']['scrollpane']
+
+    for _, element in pairs(scrollPane.children) do
+        if (element.type == "progressbar") then
+            local progressbar = element
+            local itemname = string.sub(element.name, 0,
+                                        - 1 - string.len("-progressbar"))
+            local totalProgress = {}
+            for k, v in pairs(teleportQueue) do
+                -- if (teleportQueue.destination) then
+                -- end
+                if (v.itemstack.valid_for_read and v.itemstack.prototype.name == itemname) then
+                    local currentTick = game.tick - v.startTick
+                    local finishTick = v.endTick - v.startTick
+                    -- game.print("TELEPORT QUEUE LOl")
+                    table.insert(totalProgress, currentTick / finishTick)
+                end
+            end
+            if (table_size(totalProgress) ~= 0) then
+                progressbar.visible = true
+                local newprog = getAverage(totalProgress)
+                progressbar.value = math.max(newprog, progressbar.value)
+            else
+                progressbar.visible = false
+                progressbar.value = 0
+            end
+
+        end
+    end
+
 end
 
 function createRobotRecallGUI(ent, ply, gui)
@@ -331,7 +346,8 @@ function updateTeleportJobs(event)
                                   defines.inventory.roboport_robot) or
                                   e.source
                                       .get_inventory(defines.inventory.chest)
-            if (e.itemstack.valid_for_read and e.destination.get_inventory(1).can_insert(e.itemstack)) then
+            if (e.itemstack.valid_for_read and
+                e.destination.get_inventory(1).can_insert(e.itemstack)) then
                 local amnt = e.destination.insert(e.itemstack)
                 if (amnt == e.itemstack.count) then
                     e.itemstack.clear()
@@ -409,13 +425,13 @@ script.on_event({defines.events.on_gui_click}, function(event)
 end)
 
 -- script.on_nth_tick(10, function(event)
-    -- if (event.tick % 5 == 0) then
-    --     for k, v in pairs(game.players) do
-    --         -- local  = v.gui.screen
-    --         local gui = v.gui.screen
-    --         updateRecallGui(event, gui, v)
-    --     end
-    -- end
+-- if (event.tick % 5 == 0) then
+--     for k, v in pairs(game.players) do
+--         -- local  = v.gui.screen
+--         local gui = v.gui.screen
+--         updateRecallGui(event, gui, v)
+--     end
+-- end
 -- end)
 -- script.on_event({defines.events.on_tick}, function(event)
 --     if (teleportQueueEntryCount > 0) then
@@ -432,10 +448,26 @@ end)
 --     end
 -- end)
 
-script.on_nth_tick(10, function(event)
-    if (teleportQueueEntryCount > 0) 
-        then updateTeleportJobs(event) 
+script.on_nth_tick(2, function(event)
+    if (teleportQueueEntryCount == 0 and hasChanged) then 
+        hasChanged = false
+        for k, v in pairs(openedGUIPlayers) do
+            updateRecallGuiListProgress(v.ply.gui.screen)
+        end
+    elseif (teleportQueueEntryCount > 0) then
+        hasChanged = true
+        for k, v in pairs(openedGUIPlayers) do
+            updateRecallGuiListProgress(v.ply.gui.screen)
+        end
     end
+
+end)
+
+script.on_nth_tick(10, function(event)
+    if (teleportQueueEntryCount > 0) then updateTeleportJobs(event) end
+end)
+
+script.on_nth_tick(180, function(event)
     for k, v in pairs(openedGUIPlayers) do
         -- __DebugAdapter.print("Updating every 10 ticks!")
 
