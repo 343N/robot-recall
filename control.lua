@@ -77,10 +77,8 @@ function addToTeleportQueue(source, destination, itemstack)
     -- game.print("" .. itemstack.count .. " " .. itemstack.name ..
     --                "to teleport queue")
 
-    if (not can_insert) then
-        game.print("Can't recall, no space!")
-        return
-    end
+    if (not can_insert) then return end
+        -- game.print("Can't recall, no space!") 
 
     local queueEntry = {
         source = source,

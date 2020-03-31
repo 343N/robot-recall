@@ -94,8 +94,6 @@ recipe.result = "robot-recall-chest"
 
 
 if __DebugAdapter then
-  local variables = require("__debugadapter__/variables.lua")
-    
-  -- prepare debug metatables here
+  local variables = require("__debugadapter__/variables.lua") 
 end
 data:extend{item, entity, recipe}
