@@ -1,12 +1,17 @@
 local teleportQueue = {}
-local robots = {}
+local teleportQueueEntryCount = 0
+local updateRateBoost = false
+local updateRate = {60, 10}
+local openedGUIPlayers = {}
+local updateGUIEveryTick = false
+
 -- local recallJobs = {}
 
 -- script.on_event({defines.on_event.on_tick}, function(event)
 
 -- end)
 
-local function getAverage(items)
+function getAverage(items)
     local count = 0
     local sum = 0
     for k, v in pairs(items) do
@@ -17,15 +22,49 @@ local function getAverage(items)
     return sum / count
 end
 
-local function getDistanceBetweenVectors(a, b)
+function setGUISize(element, w, h)
+    if (not element.style) then return end
+    if (w) then element.style.width = w end
+    if (h) then element.style.height = h end
+end
+
+function getAllIdleRobotsInNetwork(logistic_network)
+    local robots = {}
+    if (logistic_network == nil) then return robots end
+    for k, cell in pairs(logistic_network.cells) do
+        local inv = cell.owner.get_inventory(defines.inventory.roboport_robot)
+        for i = 1, #inv do
+            local itemstack = inv[i]
+            if (itemstack.valid_for_read) then
+                if robots[itemstack.name] then
+                    robots[itemstack.name].count =
+                        robots[itemstack.name].count + itemstack.count
+                else
+                    robots[itemstack.name] =
+                        {
+                            count = itemstack.count,
+                            item = itemstack.prototype,
+                            ent = itemstack.prototype.place_result
+                        }
+                end
+            end
+        end
+    end
+
+    return robots
+
+end
+
+function getDistanceBetweenVectors(a, b)
     local x = a.x - b.x
     local y = a.y - b.y
 
     return math.abs(math.sqrt((x * x) + (y * y)))
 end
 
-local function addToTeleportQueue(source, destination, itemstack, currentTick)
+function addToTeleportQueue(source, destination, itemstack)
 
+    local currentTick = game.tick
     local destinationInv = destination.get_inventory(defines.inventory.chest)
     local dist =
         getDistanceBetweenVectors(source.position, destination.position)
@@ -51,113 +90,273 @@ local function addToTeleportQueue(source, destination, itemstack, currentTick)
         itemstack = itemstack
     }
     table.insert(teleportQueue, queueEntry)
+    teleportQueueEntryCount = teleportQueueEntryCount + 1
     -- local timeTo
 
 end
 
-local function setGUISize(element, w, h)
-    if (w) then element.style.width = w end
-    if (h) then element.style.height = h end
+function buildRecallGui(baseGUI, entity)
+    if (not entity) then return end
+    if (entity.name ~= 'robot-recall-chest') then return end
+    local logistic_network = entity.logistic_network
+    if (baseGUI['robot-recall-chest'] ~= nil) then
+        baseGUI['robot-recall-chest'].destroy()
+    end
+    local recallFrame = baseGUI.add({
+        type = "frame",
+        name = "robot-recall-chest",
+        direction = "vertical"
+    })
+    recallFrame.caption = "Recall Robots"
+    -- ply.opened = recallFrame
+    -- this is for vanilla at 1x scale
+    local INV_DIMENSIONS = {width = 874, height = 436, verticalOffset = -88}
+    local WIDTH = 300
+    local HEIGHT = INV_DIMENSIONS.height
+    local recallScrollFlowFrame = recallFrame.add(
+                                      {
+            type = "frame",
+            name = "frame",
+            style = "image_frame",
+            direction = "vertical"
+        })
+    local recallScrollFlow = recallScrollFlowFrame.add {
+        type = "scroll-pane",
+        name = "scrollpane"
+    }
+
+    setGUISize(recallFrame, WIDTH, HEIGHT)
+    setGUISize(recallScrollFlow, WIDTH - 20, HEIGHT - 50)
+    -- game.print(ply.gui)
+    local ply = game.players[baseGUI.player_index]
+    local res = ply.display_resolution
+    local scl = ply.display_scale
+    openedGUIPlayers[baseGUI.player_index] =
+        {ply = game.players[baseGUI.player_index], ent = entity}
+    recallFrame.location = {
+        (res.width / 2) - (INV_DIMENSIONS.width * scl * 0.5) - WIDTH * scl,
+        (res.height / 2) - (INV_DIMENSIONS.height / 2 * scl) +
+            (INV_DIMENSIONS.verticalOffset * scl)
+    }
+
+    local robots = getAllIdleRobotsInNetwork(logistic_network)
+    updateRecallGuiList(baseGUI, robots, logistic_network)
 end
 
-local function updateRecallGuiElement(gui, name)
+function updateRecallGuiList(baseGui, robots, logistic_network)
+    local scrollPane = baseGui['robot-recall-chest']['frame']['scrollpane']
+    local ply = game.players[baseGui.player_index]
+    if (logistic_network == nil or not logistic_network.valid) then
+        local label = scrollPane['no-network'] or scrollPane.add(
+            {
+                type = "label",
+                caption = "This is not apart of a logistics network! :(",
+                name = "no-network"
+            })
+        label.style.horizontal_align = "center"
+        label.style.width = scrollPane.style.maximal_width - 10
+        return
+    end
+    if (scrollPane['no-network'] and scrollPane['no-network'].valid) then
+        scrollPane['no-network'].destroy()
+    end
+    local count = 0
+    for k, v in pairs(robots) do
+
+        local totalProgress = {}
+        for _,e in pairs(teleportQueue) do
+            -- if (teleportQueue.destination) then
+            -- end
+            if (k == e.itemstack.name) then
+                local currentTick = game.tick - e.startTick
+                local finishTick = e.endTick - e.startTick
+                -- game.print("TELEPORT QUEUE LOl")
+                table.insert(totalProgress, 
+                   currentTick / finishTick)
+            end
+        end
+
+        count = count + 1
+        local flow = baseGui['robot-recall-chest']['frame']['scrollpane'][k] or
+                         scrollPane.add({type = "flow", name = k})
+        local spritebutton = flow['spritebutton'] or 
+        flow.add({
+                type = "sprite-button",
+                tooltip = {"", "Recall ", v.item.localised_name},
+                name = "spritebutton"
+            })
+
+        if (spritebutton.sprite == "") then
+            spritebutton.sprite = "item/" .. v.item.name
+        end
+
+        local progressbar =
+        baseGui['robot-recall-chest']['frame']['scrollpane'][k ..
+            '-progressbar'] or scrollPane.add(
+            {
+                type = "progressbar",
+                name = k .. '-progressbar',
+                visible = false,
+                value = 0
+            })
+
+    if (table_size(totalProgress) ~= 0) then
+        progressbar.visible = true
+        local newprog = getAverage(totalProgress)
+        progressbar.value = math.max(newprog, progressbar.value)
+    else 
+        progressbar.visible = false
+        progressbar.value = 0
+    end
+
+        if (ply.opened and ply.opened.name == "robot-recall-chest") then
+            if (ply.opened.get_inventory(defines.inventory.chest).can_insert({name = k})) then
+                spritebutton.enabled = true
+            else
+                spritebutton.enabled = false
+            end
+        end
+
+        local label = flow['label'] or
+                          flow.add({type = "label", name = "label"})
+        label.caption = {"", v.item.localised_name, "\nCount: " .. v.count}
+        label.style.single_line = false
+
+ 
+
+    end
+
+    if (count * 2 ~= table_size(scrollPane)) then
+    for k, v in pairs(baseGui['robot-recall-chest']['frame']['scrollpane']
+                          .children) do
+        if (v.valid and v.type == "flow" and not robots[v.name]) then
+            local progress =
+                baseGui['robot-recall-chest']['frame']['scrollpane'][v.name ..
+                    '-progressbar']
+            v.destroy()
+            progress.destroy()
+            -- baseGui['robot-recall-chest']['frame']['scrollpane'][k..'-progressbar'].destroy()
+        end
+    end
+end
+
+    if (count == 0 and not scrollPane['no-robots-label']) then
+        local label = scrollPane.add({
+            type = "label",
+            caption = "There are no robots in this network's roboports! :(",
+            name = "no-robots-label"
+        })
+        -- baseGUI.style.height
+        label.style.single_line = false
+        label.style.horizontal_align = 'center'
+        label.style.width = scrollPane.style.maximal_width - 10
+        return
+    elseif (count > 0 and scrollPane['no-robots-label'] and
+        scrollPane['no-robots-label'].valid) then
+        scrollPane['no-robots-label'].destroy()
+    end
+end
+
+function updateRecallGuiElement(gui, name)
     -- if (gui['robot-recall-chest']) then
     --     gui['robot-recall-chest']['frame']['scrollpane'][name .. '-flow'].destroy()
     --     gui['robot-recall-chest']['frame']['scrollpane'][name .. '-progressbar'].destroy()
     -- end
 end
 
-local function updateRecallGui(event, gui, player)
-    local totalProgress = {}
-    if (gui == nil) then return end
-    if (gui['robot-recall-chest'] ~= nil) then
-        local scrollpane = gui['robot-recall-chest']['frame']['scrollpane']
-        for _, e in ipairs(teleportQueue) do
-            -- if (not itemstack.valid)
-            if (e.destination.unit_number == player.opened.unit_number) then
-                if (e.itemstack.valid_for_read) then
-                    local itemname = e.itemstack.prototype.name
-                    local progress = math.min(
-                                         (event.tick - e.startTick) /
-                                             (e.endTick - e.startTick), 1)
-                    if (totalProgress[itemname]) then
-                        table.insert(totalProgress[itemname], progress)
-                    else
-                        totalProgress[itemname] = {progress}
-                    end
-                end
-            end
-        end
+function updateRecallGui(event, gui, player)
+    -- local totalProgress = {}
+    -- if (gui == nil) then return end
+    -- if (gui['robot-recall-chest'] ~= nil) then
+    --     local scrollpane = gui['robot-recall-chest']['frame']['scrollpane']
+    --     for _, e in ipairs(teleportQueue) do
+    --         -- if (not itemstack.valid)
+    --         if (e.destination.unit_number == player.opened.unit_number) then
+    --             if (e.itemstack.valid_for_read) then
+    --                 local itemname = e.itemstack.prototype.name
+    --                 local progress = math.min(
+    --                                      (event.tick - e.startTick) /
+    --                                          (e.endTick - e.startTick), 1)
+    --                 if (totalProgress[itemname]) then
+    --                     table.insert(totalProgress[itemname], progress)
+    --                 else
+    --                     totalProgress[itemname] = {progress}
+    --                 end
+    --             end
+    --         end
+    --     end
 
-        -- if (not scrollpane) then return end
-        for _, e in pairs(scrollpane.children) do
-            if (e.type == "progressbar") then
-                local itemname = string.sub(e.name, 0, -13)
-                if (totalProgress[itemname]) then
-                    local progress = getAverage(totalProgress[itemname])
-                    e.visible = true
-                    e.value = progress
-                else
-                    e.value = 0
-                    e.visible = false
-                end
-            end
-        end
-    end
+    --     -- if (not scrollpane) then return end
+    --     for _, e in pairs(scrollpane.children) do
+    --         if (e.type == "progressbar") then
+    --             local itemname = string.sub(e.name, 0, -13)
+    --             if (totalProgress[itemname]) then
+    --                 local progress = getAverage(totalProgress[itemname])
+    --                 e.visible = true
+    --                 e.value = progress
+    --             else
+    --                 e.value = 0
+    --                 e.visible = false
+    --             end
+    --         end
+    --     end
+    -- end
 end
 
-local function drawRobotRecallGui(basegui, logisticNetwork)
+function drawRobotRecallGui(basegui, entity)
 
-    for k, cell in pairs(logisticNetwork.cells) do
-        local inv = cell.owner.get_inventory(defines.inventory.roboport_robot)
-        for i = 1, #inv do
-            local itemstack = inv[i]
-            if (itemstack.valid_for_read) then
-                if (not robots[itemstack.prototype.name]) then
-                    -- local global_proto = game.prototypes[itemstack.prototype.name]
-                    robots[itemstack.prototype.name] =
-                        {
-                            count = itemstack.count,
-                            locale = itemstack.prototype.localised_name,
-                            item = itemstack.prototype
-                        }
-                else
-                    -- robots[itemstack.prototype.localised_name] = 
-                    robots[itemstack.prototype.name].count =
-                        robots[itemstack.prototype.name].count + itemstack.count
-                end
-            end
-        end
-    end
+    if (logisticNetwork) then end
 
-    for k, v in pairs(robots) do
-        local flow = basegui.add({type = "flow", name = k .. '-flow'})
-        local progressBar = basegui.add({
-            type = "progressbar",
-            name = k .. '-progressbar'
-        })
-        progressBar.visible = false
-        local robotSprite = flow.add({
-            type = "sprite-button",
-            name = 'recall-' .. k,
-            sprite = "item/" .. k,
-            tooltip = {"", "Recall ", v.locale}
-        })
-        local robotLabel = flow.add({
-            type = "label",
-            name = "label",
-            caption = {"", v.locale, "\nCount: " .. v.count}
-        })
-        flow.style.vertical_align = "center"
+    -- for k, cell in pairs(logisticNetwork.cells) do
+    --     local inv = cell.owner.get_inventory(defines.inventory.roboport_robot)
+    --     for i = 1, #inv do
+    --         local itemstack = inv[i]
+    --         if (itemstack.valid_for_read) then
+    --             if (not robots[itemstack.prototype.name]) then
+    --                 -- local global_proto = game.prototypes[itemstack.prototype.name]
+    --                 robots[itemstack.prototype.name] =
+    --                     {
+    --                         count = itemstack.count,
+    --                         locale = itemstack.prototype.localised_name,
+    --                         item = itemstack.prototype
+    --                     }
+    --             else
+    --                 -- robots[itemstack.prototype.localised_name] = 
+    --                 robots[itemstack.prototype.name].count =
+    --                     robots[itemstack.prototype.name].count + itemstack.count
+    --             end
+    --         end
+    --     end
+    -- end
 
-        robotLabel.style.single_line = false
-    end
+    -- for k, v in pairs(robots) do
+    --     local flow = basegui.add({type = "flow", name = k .. '-flow'})
+    --     local progressBar = basegui.add({
+    --         type = "progressbar",
+    --         name = k .. '-progressbar'
+    --     })
+    --     progressBar.visible = false
+    --     local robotSprite = flow.add({
+    --         type = "sprite-button",
+    --         name = 'recall-' .. k,
+    --         sprite = "item/" .. k,
+    --         tooltip = {"", "Recall ", v.locale}
+    --     })
+    --     local robotLabel = flow.add({
+    --         type = "label",
+    --         name = "label",
+    --         caption = {"", v.locale, "\nCount: " .. v.count}
+    --     })
+    --     flow.style.vertical_align = "center"
+
+    --     robotLabel.style.single_line = false
+    -- end
 
     -- updateRecallGui(gui)
 end
 
-local function createRobotRecallGUI(ent, ply, gui)
-    if (not (ent and ent.name == "robot-recall-chest")) then return end
+function createRobotRecallGUI(ent, ply, gui)
+    -- if (not (ent and ent.name == "robot-recall-chest")) then return end
     if (gui['robot-recall-chest'] ~= nil) then
         gui['robot-recall-chest'].destroy()
     end
@@ -196,14 +395,16 @@ local function createRobotRecallGUI(ent, ply, gui)
             (INV_DIMENSIONS.verticalOffset * scl)
     }
 
-    if (ent.logistic_network) then
-        -- game.print(ent.logistic_network.robots)
-        -- recallFrame.direction = "vertical"
-        drawRobotRecallGui(recallScrollFlow, ent.logistic_network)
-    end
+    -- if (ent and ent.logistic_network) then
+    --     -- game.print(ent.logistic_network.robots)
+    --     -- recallFrame.direction = "vertical"
+    --     -- drawRobotRecallGui(recallScrollFlow, ent.logistic_network)
+    -- end
 end
 
-local function callRobotsToEntity(location_ent, logisticNetwork, robotItem, tick)
+function callRobotsToEntity(location_ent, logisticNetwork, robotItem)
+
+
 
     for k, cell in pairs(logisticNetwork.cells) do
         local roboport = cell.owner
@@ -212,9 +413,7 @@ local function callRobotsToEntity(location_ent, logisticNetwork, robotItem, tick
             local itemstack = inv[i]
             if (itemstack.valid_for_read) then
                 if (itemstack.prototype == robotItem) then
-                    -- game.print("Found " .. robotItem.name)
-                    addToTeleportQueue(roboport, location_ent, itemstack, tick)
-
+                    addToTeleportQueue(roboport, location_ent, itemstack)
                 end
             end
         end
@@ -222,7 +421,9 @@ local function callRobotsToEntity(location_ent, logisticNetwork, robotItem, tick
 
 end
 
-local function updateTeleportJobs(event)
+-- function updateLogisticNetwork
+
+function updateTeleportJobs(event)
     for k, e in ipairs(teleportQueue) do
         -- if (not itemstack.valid)
         if (event.tick >= e.endTick) then
@@ -242,20 +443,36 @@ local function updateTeleportJobs(event)
                     e.itemstack.count = e.itemstack.count - amnt
                 end
             end
-            for _, p in pairs(game.players) do
-                -- removeRecallGuiElement(p.gui.screen, e.itemstack.prototype.name)
-                createRobotRecallGUI(p.opened, p, p.gui.screen)
-            end
+
+            -- for _, v in pairs(openedGUIPlayers) do
+            --     -- getAllIdleRobotsInNetwork(p.ply.opened)
+            --     -- local robots = getAllIdleRobotsInNetwork(v.ent.logistic_network)
+            --     -- updateRecallGuiList(v.ply.gui.screen, robots, v.ent.logistic_network)
+            -- end
             table.remove(teleportQueue, k)
+            teleportQueueEntryCount = teleportQueueEntryCount - 1
         end
     end
 end
+
+function initRecallChest(event) end
+
+script.on_event({defines.events.on_built_entity}, function(event)
+    -- game.print("Hello!")
+    if (event.created_entity and event.created_entity.name ==
+        "robot-recall-chest") then initRecallChest(event) end
+end)
+
+script.on_event({defines.events.on_robot_built_entity}, function(event)
+    if (event.created_entity and event.created_entity.name ==
+        "robot-recall-chest") then initRecallChest(event) end
+end)
 
 script.on_event({defines.events.on_gui_opened}, function(event)
     local ent = event.entity
     local ply = game.players[event.player_index]
     local gui = ply.gui.screen
-    createRobotRecallGUI(ent, ply, gui)
+    buildRecallGui(gui, ent)
     -- recallFrame.add({})
 
     -- local closeButton = recallFrame.add({type="button",name="robot-recall-chest.close", caption="Close!"})
@@ -267,6 +484,9 @@ script.on_event({defines.events.on_gui_closed}, function(event)
     local ply = game.players[event.player_index]
     local gui = ply.gui.screen
     if (gui['robot-recall-chest'] ~= nil) then
+        if (openedGUIPlayers[event.player_index]) then
+            table.remove(openedGUIPlayers, event.player_index)
+        end
         gui['robot-recall-chest'].destroy()
     end
     -- game.print('on_gui_close')
@@ -277,13 +497,13 @@ script.on_event({defines.events.on_gui_click}, function(event)
     local ply = game.players[event.player_index]
     -- local items = game.item_prototypes
 
-    if (event.element.type == "sprite-button" and event.element.name:sub(1, 7) ==
-        'recall-') then
-        local itemname = event.element.name:sub(8)
+    if (event.element.type == "sprite-button" and 
+        ply.opened and 
+        ply.opened.name == "robot-recall-chest") then
+        local itemname = event.element.parent.name
         local item = game.item_prototypes[itemname]
         -- game.print('recalling "' .. itemname .. '"')
-        callRobotsToEntity(ply.opened, ply.opened.logistic_network, item,
-                           event.tick)
+        callRobotsToEntity(ply.opened, ply.opened.logistic_network, item, event.tick)
 
     end
 
@@ -302,11 +522,32 @@ script.on_nth_tick(20, function(event)
         end
     end
 end)
-
-script.on_nth_tick(2, function(event)
-    for k, v in pairs(game.players) do
-        -- local  = v.gui.screen
-        local gui = v.gui.screen
-        updateRecallGui(event, gui, v)
-    end
+-- script.on_event({defines.events.on_tick}, function(event)
+--     if (teleportQueueEntryCount > 0) then
+--         for k, v in pairs(openedGUIPlayers) do
+--             -- local  = v.gui.screen
+--             local gui = v.ply.gui.screen
+--             -- __DebugAdapter.print("Updating every tick!")
+--             if (v.ent.logistic_network and v.ent.logistic_network.valid) then
+--                 local robots = getAllIdleRobotsInNetwork(v.ent.logistic_network)
+--                 updateRecallGuiList(v.ply.gui.screen, robots,
+--                                     v.ent.logistic_network)
+--             end
+--         end
+--     end
+-- end)
+script.on_nth_tick(10, function(event)
+    -- if (teleportQueueEntryCount == 0) then
+        for k, v in pairs(openedGUIPlayers) do
+            -- __DebugAdapter.print("Updating every 10 ticks!")
+            
+            -- local  = v.gui.screen
+            local gui = v.ply.gui.screen
+            if (v.ent.logistic_network and v.ent.logistic_network.valid) then
+                local robots = getAllIdleRobotsInNetwork(v.ent.logistic_network)
+                updateRecallGuiList(v.ply.gui.screen, robots,
+                                    v.ent.logistic_network)
+            end
+        end
+    -- end
 end)
