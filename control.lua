@@ -340,8 +340,7 @@ function updateTeleportJobs(event)
         if (not e.destination   or  not e.destination.valid)    then return end
         if (not e.source        or  not e.source.valid)         then return end
         if (event.tick >= e.endTick) then
-            
-            end
+
             -- if () then return end
             local destinationInv = e.destination.get_inventory(
                                        defines.inventory.roboport_robot) or
