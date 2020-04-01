@@ -345,9 +345,14 @@ end
 function updateTeleportJobs(event)
     for k, e in ipairs(teleportQueue) do
         -- if (not itemstack.valid)
-        if (not e.destination   or  not e.destination.valid)    then return end
-        if (not e.source        or  not e.source.valid)         then return end
+        if ((not e.destination   or  not e.destination.valid) or 
+            (not e.source        or  not e.source.valid)) then
+            table.remove(teleportQueue, k)
+            teleportQueueEntryCount = teleportQueueEntryCount - 1
+            return 
+        end
         if (event.tick >= e.endTick) then
+            game.print("Teleport job finished!")
 
             -- if () then return end
             local destinationInv = e.destination.get_inventory(
