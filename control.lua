@@ -352,7 +352,7 @@ function updateTeleportJobs(event)
             return 
         end
         if (event.tick >= e.endTick) then
-            game.print("Teleport job finished!")
+            -- game.print("Teleport job finished!")
 
             -- if () then return end
             local destinationInv = e.destination.get_inventory(
