@@ -237,7 +237,7 @@ function updateRecallGuiListProgress(baseGui, robots, logistic_network)
     if (not baseGui or not baseGui['robot-recall-chest']) then return end
 
     local scrollPane = baseGui['robot-recall-chest']['frame']['scrollpane']
-
+    local ply = game.players[baseGui.player_index]
     for _, element in pairs(scrollPane.children) do
         if (element.type == "progressbar") then
             local progressbar = element
@@ -247,7 +247,9 @@ function updateRecallGuiListProgress(baseGui, robots, logistic_network)
             for k, v in pairs(teleportQueue) do
                 -- if (teleportQueue.destination) then
                 -- end
-                if (v.itemstack.valid_for_read and v.itemstack.prototype.name == itemname) then
+                
+                if (v.destination.unit_number == ply.opened.unit_number 
+                    and v.itemstack.prototype.name == itemname) then
                     local currentTick = game.tick - v.startTick
                     local finishTick = v.endTick - v.startTick
                     -- game.print("TELEPORT QUEUE LOl")
@@ -261,6 +263,8 @@ function updateRecallGuiListProgress(baseGui, robots, logistic_network)
             else
                 progressbar.visible = false
                 progressbar.value = 0
+                -- local robots = getAllIdleRobotsInNetwork(ply.opened.ent)
+                -- updateRecallGuiList(v.ply.gui.screen, robots, v.ent.logistic_network)
             end
 
         end
