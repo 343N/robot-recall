@@ -249,7 +249,7 @@ function updateRecallGuiListProgress(baseGui, robots, logistic_network)
                 -- end
                 
                 if (v.destination.unit_number == ply.opened.unit_number 
-                    and v.itemstack.prototype.name == itemname) then
+                    and v.itemstack.valid_for_read and v.itemstack.prototype.name == itemname) then
                     local currentTick = game.tick - v.startTick
                     local finishTick = v.endTick - v.startTick
                     -- game.print("TELEPORT QUEUE LOl")
