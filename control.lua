@@ -80,13 +80,15 @@ function addToTeleportQueue(source, destination, itemstack)
 
     if (not can_insert) then return end
     -- game.print("Can't recall, no space!") 
-
+    local item_name = itemstack.prototype.name
     local queueEntry = {
         source = source,
         destination = destination,
         startTick = currentTick,
         endTick = math.abs(currentTick + (dist / unitsPerTick)),
-        itemstack = itemstack
+        itemstack = itemstack,
+        itemname = item_name
+        
     }
     table.insert(teleportQueue, queueEntry)
     teleportQueueEntryCount = teleportQueueEntryCount + 1
@@ -363,8 +365,10 @@ function updateTeleportJobs(event)
                                   defines.inventory.roboport_robot) or
                                   e.source
                                       .get_inventory(defines.inventory.chest)
+
             if (e.itemstack.valid_for_read and
-                e.destination.get_inventory(1).can_insert(e.itemstack)) then
+                e.destination.get_inventory(1).can_insert(e.itemstack) and 
+                e.itemstack.prototype.name == e.itemname) then
                 local amnt = e.destination.insert(e.itemstack)
                 if (amnt == e.itemstack.count) then
                     e.itemstack.clear()
