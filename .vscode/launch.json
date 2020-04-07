@@ -9,7 +9,7 @@
             "type": "factoriomod",
             "request": "launch",
             "name": "Factorio Mod Debug",
-            "factorioPath": "C:/Program Files/Factorio/bin/x64/factorio.exe"
+            "factorioPath": "C:/Factorio-dev/bin/x64/factorio.exe"
         }
     ]
 }

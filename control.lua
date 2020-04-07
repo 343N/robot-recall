@@ -1,10 +1,7 @@
-local teleportQueue = {}
-local teleportQueueEntryCount = 0
-local updateRateBoost = false
-local updateRate = {60, 10}
-local hasChanged = true
-local openedGUIPlayers = {}
-local updateGUIEveryTick = false
+
+-- local updateRateBoost = false
+-- local updateRate = {60, 10}
+-- local updateGUIEveryTick = false
 
 -- local recallJobs = {}
 
@@ -90,8 +87,8 @@ function addToTeleportQueue(source, destination, itemstack)
         itemname = item_name
         
     }
-    table.insert(teleportQueue, queueEntry)
-    teleportQueueEntryCount = teleportQueueEntryCount + 1
+    table.insert(global.teleportQueue, queueEntry)
+    global.teleportQueueEntryCount = global.teleportQueueEntryCount + 1
     -- local timeTo
 
 end
@@ -132,7 +129,7 @@ function buildRecallGui(baseGUI, entity)
     local ply = game.players[baseGUI.player_index]
     local res = ply.display_resolution
     local scl = ply.display_scale
-    openedGUIPlayers[baseGUI.player_index] =
+    global.openedGUIPlayers[baseGUI.player_index] =
         {ply = game.players[baseGUI.player_index], ent = entity}
     recallFrame.location = {
         (res.width / 2) - (INV_DIMENSIONS.width * scl * 0.5) - WIDTH * scl,
@@ -246,8 +243,8 @@ function updateRecallGuiListProgress(baseGui, robots, logistic_network)
             local itemname = string.sub(element.name, 0,
                                         - 1 - string.len("-progressbar"))
             local totalProgress = {}
-            for k, v in pairs(teleportQueue) do
-                -- if (teleportQueue.destination) then
+            for k, v in pairs(global.teleportQueue) do
+                -- if (global.teleportQueue.destination) then
                 -- end
                 
                 if (v.destination 
@@ -345,12 +342,12 @@ end
 -- function updateLogisticNetwork
 
 function updateTeleportJobs(event)
-    for k, e in ipairs(teleportQueue) do
+    for k, e in ipairs(global.teleportQueue) do
         -- if (not itemstack.valid)
         if ((not e.destination   or  not e.destination.valid) or 
             (not e.source        or  not e.source.valid)) then
-            table.remove(teleportQueue, k)
-            teleportQueueEntryCount = teleportQueueEntryCount - 1
+            table.remove(global.teleportQueue, k)
+            global.teleportQueueEntryCount = global.teleportQueueEntryCount - 1
             return 
         end
         if (event.tick >= e.endTick) then
@@ -377,13 +374,13 @@ function updateTeleportJobs(event)
                 end
             end
 
-            -- for _, v in pairs(openedGUIPlayers) do
+            -- for _, v in pairs(global.openedGUIPlayers) do
             --     -- getAllIdleRobotsInNetwork(p.ply.opened)
             --     -- local robots = getAllIdleRobotsInNetwork(v.ent.logistic_network)
             --     -- updateRecallGuiList(v.ply.gui.screen, robots, v.ent.logistic_network)
             -- end
-            table.remove(teleportQueue, k)
-            teleportQueueEntryCount = teleportQueueEntryCount - 1
+            table.remove(global.teleportQueue, k)
+            global.teleportQueueEntryCount = global.teleportQueueEntryCount - 1
         end
     end
 end
@@ -417,8 +414,8 @@ script.on_event({defines.events.on_gui_closed}, function(event)
     local ply = game.players[event.player_index]
     local gui = ply.gui.screen
     if (gui['robot-recall-chest'] ~= nil) then
-        if (openedGUIPlayers[event.player_index]) then
-            table.remove(openedGUIPlayers, event.player_index)
+        if (global.openedGUIPlayers[event.player_index]) then
+            table.remove(global.openedGUIPlayers, event.player_index)
         end
         gui['robot-recall-chest'].destroy()
     end
@@ -455,8 +452,8 @@ end)
 -- end
 -- end)
 -- script.on_event({defines.events.on_tick}, function(event)
---     if (teleportQueueEntryCount > 0) then
---         for k, v in pairs(openedGUIPlayers) do
+--     if (global.teleportQueueEntryCount > 0) then
+--         for k, v in pairs(global.openedGUIPlayers) do
 --             -- local  = v.gui.screen
 --             local gui = v.ply.gui.screen
 --             -- __DebugAdapter.print("Updating every tick!")
@@ -470,14 +467,14 @@ end)
 -- end)
 
 script.on_nth_tick(2, function(event)
-    if (teleportQueueEntryCount == 0 and hasChanged) then 
-        hasChanged = false
-        for k, v in pairs(openedGUIPlayers) do
+    if (global.teleportQueueEntryCount == 0 and global.hasChanged) then 
+        global.hasChanged = false
+        for k, v in pairs(global.openedGUIPlayers) do
             updateRecallGuiListProgress(v.ply.gui.screen)
         end
-    elseif (teleportQueueEntryCount > 0) then
-        hasChanged = true
-        for k, v in pairs(openedGUIPlayers) do
+    elseif (global.teleportQueueEntryCount > 0) then
+        global.hasChanged = true
+        for k, v in pairs(global.openedGUIPlayers) do
             updateRecallGuiListProgress(v.ply.gui.screen)
         end
     end
@@ -485,11 +482,11 @@ script.on_nth_tick(2, function(event)
 end)
 
 script.on_nth_tick(10, function(event)
-    if (teleportQueueEntryCount > 0) then updateTeleportJobs(event) end
+    if (global.teleportQueueEntryCount > 0) then updateTeleportJobs(event) end
 end)
 
 script.on_nth_tick(180, function(event)
-    for k, v in pairs(openedGUIPlayers) do
+    for k, v in pairs(global.openedGUIPlayers) do
         -- __DebugAdapter.print("Updating every 10 ticks!")
 
         -- local  = v.gui.screen
@@ -500,4 +497,18 @@ script.on_nth_tick(180, function(event)
         end
     end
     -- end
+end)
+
+script.on_init(function(event)
+    global.teleportQueue = {}
+    global.teleportQueueEntryCount = 0
+    global.hasChanged = false
+    global.openedGUIPlayers = {}
+end)
+
+script.on_configuration_changed(function(event)
+    global.teleportQueue = global.teleportQueue or {}
+    global.teleportQueueEntryCount = global.teleportQueueEntryCount or 0
+    global.hasChanged = global.hasChanged or false
+    global.openedGUIPlayers = global.openedGUIPlayers or {}
 end)
