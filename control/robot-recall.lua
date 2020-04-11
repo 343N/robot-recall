@@ -560,7 +560,7 @@ end)
 
 script.on_configuration_changed(function(event)
     if (event.mod_changes and event.mod_changes['robot-recall']) then
-        local old_ver = event.mod_changes['robot-recall']
+        local old_ver = event.mod_changes['robot-recall'].old_version
         if (old_ver == "0.2.0" or string.find(old_ver, "0.1.")) then
             global.teleportQueue = {}
             global.teleportQueueEntryCount = 0
