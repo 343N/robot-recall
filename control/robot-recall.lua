@@ -519,6 +519,7 @@ end)
 -- end)
 
 script.on_nth_tick(2, function(event)
+    if (not global.teleportQueueEntryCount or not global.teleportQueue) then return end
     if (global.teleportQueueEntryCount == 0 and global.hasChanged) then
         global.hasChanged = false
         for k, v in pairs(global.openedGUIPlayers) do
@@ -534,7 +535,8 @@ script.on_nth_tick(2, function(event)
 end)
 
 script.on_nth_tick(10, function(event)
-    if (global.teleportQueueEntryCount > 0) then updateTeleportJobs(event) end
+    -- if (not global.teleportQueueEntryCount
+    if (global.teleportQueueEntryCount and global.teleportQueueEntryCount > 0) then updateTeleportJobs(event) end
 end)
 
 script.on_nth_tick(180, function(event)
@@ -551,24 +553,4 @@ script.on_nth_tick(180, function(event)
     -- end
 end)
 
-script.on_init(function(event)
-    global.teleportQueue = {}
-    global.teleportQueueEntryCount = 0
-    global.hasChanged = false
-    global.openedGUIPlayers = {}
-end)
 
-script.on_configuration_changed(function(event)
-    if (event.mod_changes and event.mod_changes['robot-recall']) then
-        local old_ver = event.mod_changes['robot-recall'].old_version
-        if (old_ver == "0.2.0" or string.find(old_ver, "0.1.")) then
-            global.teleportQueue = {}
-            global.teleportQueueEntryCount = 0
-        end
-    end
-
-    global.teleportQueue = global.teleportQueue or {}
-    global.teleportQueueEntryCount = global.teleportQueueEntryCount or 0
-    global.hasChanged = global.hasChanged or false
-    global.openedGUIPlayers = global.openedGUIPlayers or {}
-end)
