@@ -211,7 +211,7 @@ function updateRecallGuiList(baseGui, robots, logistic_network)
     local recalled = getBotsBeingRecalled()
     for k, v in pairs(recalled) do
         if (robots[k]) then
-            robots[k].count = robots[k] + v
+            robots[k].count = robots[k].count + v
         else
             robots[k] = {
                 count = v,
@@ -559,6 +559,14 @@ script.on_init(function(event)
 end)
 
 script.on_configuration_changed(function(event)
+    if (event.mod_changes and event.mod_changes['robot-recall']) then
+        local old_ver = event.mod_changes['robot-recall']
+        if (old_ver == "0.2.0" or string.find(old_ver, "0.1.")) then
+            global.teleportQueue = {}
+            global.teleportQueueEntryCount = 0
+        end
+    end
+
     global.teleportQueue = global.teleportQueue or {}
     global.teleportQueueEntryCount = global.teleportQueueEntryCount or 0
     global.hasChanged = global.hasChanged or false
