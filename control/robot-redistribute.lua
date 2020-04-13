@@ -1,6 +1,6 @@
 script.on_nth_tick(15, function(event)
     for k, v in pairs(global.deploying) do
-        if (v.deploying) then
+        if (v.deploying and v.ent.valid) then
             local inv = v.ent.get_inventory(1)
             if (not inv.is_empty()) then
                 local items = inv.get_contents()
@@ -8,8 +8,8 @@ script.on_nth_tick(15, function(event)
                     local placeresult = game.item_prototypes[name].place_result
                     if (placeresult.type == "logistic-robot" or placeresult.type ==
                         "construction-robot") then
-                        if (logisticNetworkHasItemSpace(v.logistic_network, name)) then
-                            v.surface.create_entity(
+                        if (logisticNetworkHasItemSpace(v.ent.logistic_network, name)) then
+                            v.ent.surface.create_entity(
                                 {
                                     name = placeresult.name,
                                     position = v.ent.position,
@@ -25,7 +25,14 @@ script.on_nth_tick(15, function(event)
     end
 end)
 
-script.on_event(defines.events.on_built_entity, function(event) end)
+script.on_event(defines.events.on_built_entity, function(event) 
+
+    if (event.created_entity.name == "robot-redistribute-chest") then
+        local entity = event.created_entity
+        global.deploying[entity.unit_number] = {ent = entity, deploying = false}
+    end   
+
+end)
 
 -- function canInsertIntoRoboport(itemname, logistic_network)
 --     -- local roboport = 
@@ -56,7 +63,7 @@ end
 script.on_nth_tick(60, function(event)
     for k, v in pairs(global.deploying) do
         if (v.ent and not v.ent.valid) then table.remove(global.deploying, k) 
-        elseif (v.ent and not v.ent.is_empty()) then v.deploying = true 
+        elseif (v.ent and not v.ent.get_inventory(1).is_empty()) then v.deploying = true 
         else v.deploying = false end
     end
 
