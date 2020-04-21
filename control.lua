@@ -31,8 +31,27 @@ script.on_configuration_changed(function(event)
                     end
                 end
             end
+            if (new_ver == "0.2.1" or 
+                new_ver == "0.2.2" or 
+                new_ver == "0.2.3" or 
+                string.find(old_ver, "0.1.")) then 
+                local newTeleportQueue = {}
+                for k,e in pairs(global.teleportQueue) do
+                    local newEl = e
+                    if (newEl.source and newEl.source.valid) then
+                        newEl.srcPos = newEl.source.position
+                        newEl.surface = newEl.source.surface
+                    end
+                    if (newEl.destination and newEl.destination.valid) then
+                        newEl.surface = newEl.destination.surface
+                        newEl.destPos = newEl.destination.position
+                    end
+                    table.insert(newTeleportQueue, newEl)
+                end
+                global.teleportQueue = newTeleportQueue
+                global.teleportQueueEntryCount = table_size(newTeleportQueue)
+            end
         end
-
     end
 
     global.deploying = global.deploying or {}

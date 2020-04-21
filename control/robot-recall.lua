@@ -70,8 +70,7 @@ function addToTeleportQueue(source, destination, itemstack)
         getDistanceBetweenVectors(source.position, destination.position)
 
     local robotEnt = itemstack.prototype.place_result
-    local unitsPerTick = source["force"]["worker_robots_speed_modifier"] *
-                             robotEnt.speed
+    local unitsPerTick = (source["force"]["worker_robots_speed_modifier"] + 1) * robotEnt.speed
     local can_insert = destinationInv.can_insert(itemstack)
 
     -- game.print("" .. itemstack.count .. " " .. itemstack.name ..
@@ -82,11 +81,14 @@ function addToTeleportQueue(source, destination, itemstack)
     local item_name = itemstack.prototype.name
     local queueEntry = {
         source = source,
+        srcPos = source.position,
         destination = destination,
+        destPos = destination.position,
         startTick = currentTick,
         endTick = math.abs(currentTick + (dist / unitsPerTick)),
         -- itemstack = itemstack,
         itemname = item_name,
+        surface = destination.surface,
         count = itemstack.count
     }
     table.insert(global.teleportQueue, queueEntry)
@@ -361,13 +363,29 @@ function callRobotsToEntity(location_ent, logisticNetwork, robotItem)
 end
 
 function updateTeleportJobs(event)
+    local warning = false
     for k, e in ipairs(global.teleportQueue) do
         -- if (not itemstack.valid)
-        if ((not e.destination or not e.destination.valid) or
-            (not e.source or not e.source.valid)) then
-            table.remove(global.teleportQueue, k)
+        if ((not e.destination or not e.destination.valid)) then
+            -- game.print("Source or destination not valid! Removing queue item!")
+            
+            local count
+            if (not warning) then
+                -- if (__DebugAdapter) then __DebugAdapter.print("Hello!") end
+                game.print("Robot Recall Chest cannot be found! Robots have been returned to their source position.")
+                warning = true
+            end
+            if (e.source.valid) then count = e.source.insert({name=e.itemname, count=e.count}) end
+            if (not count or count ~= e.count) then
+                count = count and (e.count - count) or e.count
+                e.surface.spill_item_stack(e.srcPos, {name=e.itemname, count=count})
+                game.print(count .. " robots have been dropped at their source position, there is no room in the source.")
+            end
+
+
+            global.teleportQueue[k] = nil
             global.teleportQueueEntryCount = global.teleportQueueEntryCount - 1
-            return
+
         end
         if (event.tick >= e.endTick) then
             -- game.print("Teleport job finished!")
@@ -389,8 +407,8 @@ function updateTeleportJobs(event)
                     local remainder = e.count - amnt
                     remainder = remainder - sourceInv.insert({name = e.itemname, count = remainder})
                     if (remainder ~= 0) then
-                        game.print("Recall of " .. e.count .. " " .. e.itemname ..
-                                " robots has (partially) failed. " .. remainder .. ' could not be recalled.')
+                        game.print("Recall of " .. e.count .. " '" .. e.itemname ..
+                                "' robots has (partially) failed. " .. remainder .. ' could not be recalled.')
                         if (e.destination.logistic_network and
                             e.destination.logistic_network.valid) then
                             for _, cell in
