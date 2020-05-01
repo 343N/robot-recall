@@ -70,7 +70,7 @@ function addToTeleportQueue(source, destination, itemstack)
         getDistanceBetweenVectors(source.position, destination.position)
 
     local robotEnt = itemstack.prototype.place_result
-    local unitsPerTick = (source["force"]["worker_robots_speed_modifier"] + 1) * robotEnt.speed
+    local unitsPerTick = (source["force"]["worker_robots_speed_modifier"] + 1) * robotEnt.speed * settings.global["recall-speed-modifier"].value
     local can_insert = destinationInv.can_insert(itemstack)
 
     -- game.print("" .. itemstack.count .. " " .. itemstack.name ..

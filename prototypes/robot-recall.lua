@@ -8,7 +8,7 @@ entity.name = "robot-recall-chest"
 entity.order = "logistic-container"
 entity.minable = { mining_time = 0.1, result = "robot-recall-chest" } 
 entity.logistic_mode = "passive-provider"
-entity.inventory_size = 40
+entity.inventory_size = settings.startup["recall-chest-size"].value
 entity.icon_size = 64
 entity.health = 350
 entity.icon_mipmaps = 4
@@ -17,7 +17,7 @@ entity.open_sound = { filename = "__base__/sound/metallic-chest-open.ogg", volum
 entity.close_sound = { filename = "__base__/sound/metallic-chest-close.ogg", volume = 0.5 }
 entity.animation_sound = baseEnt.animation_sound
 entity.vehicle_impact_sound = baseEnt.vehicle_impact_sound
-entity.opened_duration = baseEnt.opened_duration
+entity.opened_duration = baseEnt.opened_duration 
 entity.collision_box = {{-0.35, -0.35}, {0.35, 0.35}}
 entity.selection_box = {{-0.5, -0.5}, {0.5, 0.5}}
 entity.damaged_trigger_effect = baseEnt.damaged_trigger_effect
