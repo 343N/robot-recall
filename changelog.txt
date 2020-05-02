@@ -1,0 +1,6 @@
+---------------------------------------------------------------------------------------------------
+Version: 0.2.5
+Date: 05. 02. 2020
+  Changes:
+    - Added mod setting for Robot Recall speed (Settings -> Map)
+    - Added mod setting for Robot Recall station inventory size (Settings -> Startup)
