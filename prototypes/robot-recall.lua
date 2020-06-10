@@ -71,6 +71,7 @@ entity.picture = entity.animation
 entity.circuit_wire_connection_point = circuit_connector_definitions["chest"].points
 entity.circuit_connector_sprites = circuit_connector_definitions["chest"].sprites
 entity.circuit_wire_max_distance = default_circuit_wire_max_distance
+entity.flags = {"placeable-player", "player-creation"}
   
 
 

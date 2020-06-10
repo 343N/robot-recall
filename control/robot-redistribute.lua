@@ -34,6 +34,15 @@ script.on_event(defines.events.on_built_entity, function(event)
 
 end)
 
+script.on_event(defines.events.on_robot_built_entity, function(event) 
+
+    if (event.created_entity.name == "robot-redistribute-chest") then
+        local entity = event.created_entity
+        global.deploying[entity.unit_number] = {ent = entity, deploying = false}
+    end   
+
+end)
+
 -- function canInsertIntoRoboport(itemname, logistic_network)
 --     -- local roboport = 
 --     if (logistic_network and logistic_network.valid) then

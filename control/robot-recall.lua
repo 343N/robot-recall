@@ -105,10 +105,12 @@ function buildRecallGui(baseGUI, entity)
     if (baseGUI['robot-recall-chest'] ~= nil) then
         baseGUI['robot-recall-chest'].destroy()
     end
+    
     local recallFrame = baseGUI.add({
         type = "frame",
         name = "robot-recall-chest",
-        direction = "vertical"
+        direction = "vertical",
+        style="standalone_inner_frame_in_outer_frame"
     })
     recallFrame.caption = "Recall Robots"
     -- ply.opened = recallFrame
@@ -120,7 +122,7 @@ function buildRecallGui(baseGUI, entity)
                                       {
             type = "frame",
             name = "frame",
-            style = "image_frame",
+            style = "inside_shallow_frame",
             direction = "vertical"
         })
     local recallScrollFlow = recallScrollFlowFrame.add {
@@ -319,7 +321,7 @@ function createRobotRecallGUI(ent, ply, gui)
                                       {
             type = "frame",
             name = "frame",
-            style = "image_frame",
+            style = "inside_shallow_frame_with_padding",
             direction = "vertical"
         })
     local recallScrollFlow = recallScrollFlowFrame.add {
