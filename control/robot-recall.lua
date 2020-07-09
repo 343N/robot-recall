@@ -110,7 +110,7 @@ function buildRecallGui(baseGUI, entity)
         type = "frame",
         name = "robot-recall-chest",
         direction = "vertical",
-        style="standalone_inner_frame_in_outer_frame"
+        -- style="standalone_inner_frame_in_outer_frame"
     })
     recallFrame.caption = "Recall Robots"
     -- ply.opened = recallFrame
