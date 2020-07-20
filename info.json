@@ -3,8 +3,8 @@
     "version": "0.2.9",
     "title": "Robot Recall",
     "author": "343N",
-    "contact": "",
-    "homepage": "",
+    "contact": "343N#6969",
+    "homepage": "http://github.com/343N/robot-recall",
     "factorio_version": "0.18",
     "dependencies": ["base >= 0.18"],
     "description": "Lets you recall all robots in your network"
