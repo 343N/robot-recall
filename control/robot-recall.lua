@@ -112,7 +112,7 @@ function buildRecallGui(baseGUI, entity)
         direction = "vertical",
         -- style="standalone_inner_frame_in_outer_frame"
     })
-    recallFrame.caption = "Recall Robots"
+    recallFrame.caption = {'robot-recall.chest-title'}
     -- ply.opened = recallFrame
     -- this is for vanilla at 1x scale
     local INV_DIMENSIONS = {width = 874, height = 436, verticalOffset = -88}
@@ -158,7 +158,7 @@ function updateRecallGuiListEntry(itemname, count, baseGui)
                              {
             type = "sprite-button",
             tooltip = {
-                "", "Recall ", getItemProtoFromName(itemname).localised_name
+                "robot-recall.recall-button-tooltip", getItemProtoFromName(itemname).localised_name
             },
             name = "spritebutton"
         })
@@ -186,10 +186,7 @@ function updateRecallGuiListEntry(itemname, count, baseGui)
     end
 
     local label = flow['label'] or flow.add({type = "label", name = "label"})
-    label.caption = {
-        "", getItemProtoFromName(itemname).localised_name,
-        "\nCount: " .. count
-    }
+    label.caption = {"robot-recall.recall-count", getItemProtoFromName(itemname).localised_name, count}
     label.style.single_line = false
 
 end
@@ -201,7 +198,7 @@ function updateRecallGuiList(baseGui, robots, logistic_network)
         local label = scrollPane['no-network'] or scrollPane.add(
                           {
                 type = "label",
-                caption = "This is not apart of a logistics network! :(",
+                caption = {"robot-recall.chest-no-network", ":("},
                 name = "no-network"
             })
         label.style.horizontal_align = "center"
@@ -244,7 +241,7 @@ function updateRecallGuiList(baseGui, robots, logistic_network)
     if (count == 0 and not scrollPane['no-robots-label']) then
         local label = scrollPane.add({
             type = "label",
-            caption = "There are no robots in this network's roboports! :(",
+            caption = {'robot-recall.chest-no-robot-in-roboport', ":("},
             name = "no-robots-label"
         })
         -- baseGUI.style.height
@@ -311,7 +308,7 @@ function createRobotRecallGUI(ent, ply, gui)
         name = "robot-recall-chest",
         direction = "vertical"
     })
-    recallFrame.caption = "Recall Robots"
+    recallFrame.caption = {'robot-recall.chest-title'}
     -- ply.opened = recallFrame
     -- this is for vanilla at 1x scale
     local INV_DIMENSIONS = {width = 874, height = 436, verticalOffset = -88}
