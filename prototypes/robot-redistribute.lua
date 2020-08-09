@@ -7,8 +7,9 @@ local baseEnt = data.raw["logistic-container"]["logistic-chest-passive-provider"
 entity.name = "robot-redistribute-chest"
 entity.order = "logistic-container"
 entity.minable = { mining_time = 0.1, result = "robot-redistribute-chest" } 
-entity.logistic_mode = "passive-provider"
+entity.logistic_mode = "requester"
 entity.inventory_size = 40
+entity.logistic_slots_count = 40
 entity.icon_size = 64
 entity.health = 350
 entity.icon = "__robot-recall__/graphics/icons/robot-redistribute-chest.png"
@@ -92,6 +93,9 @@ local recipe = table.deepcopy(data.raw.recipe["logistic-chest-requester"])
 recipe.enabled = true;
 recipe.name = "robot-redistribute-chest"
 recipe.result = "robot-redistribute-chest"
+
+table.insert(data.raw["technology"]["construction-robotics"].effects, {type="unlock-recipe", recipe="robot-redistribute-chest"})
+table.insert(data.raw["technology"]["logistic-robotics"].effects, {type="unlock-recipe", recipe="robot-redistribute-chest"})
 
 
 if __DebugAdapter then

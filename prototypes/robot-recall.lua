@@ -93,6 +93,9 @@ recipe.enabled = true;
 recipe.name = "robot-recall-chest"
 recipe.result = "robot-recall-chest"
 
+table.insert(data.raw["technology"]["construction-robotics"].effects, {type="unlock-recipe", recipe="robot-recall-chest"})
+table.insert(data.raw["technology"]["logistic-robotics"].effects, {type="unlock-recipe", recipe="robot-recall-chest"})
+
 
 if __DebugAdapter then
   local variables = require("__debugadapter__/variables.lua") 
