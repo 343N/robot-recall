@@ -89,7 +89,7 @@ item.icons = {
 }
 
 local recipe = table.deepcopy(data.raw.recipe["logistic-chest-requester"])
-recipe.enabled = true;
+recipe.enabled = false;
 recipe.name = "robot-recall-chest"
 recipe.result = "robot-recall-chest"
 
