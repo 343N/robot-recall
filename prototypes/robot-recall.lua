@@ -6,7 +6,7 @@ local baseEnt = data.raw["logistic-container"]["logistic-chest-passive-provider"
 
 entity.name = "robot-recall-chest"
 entity.order = "logistic-container"
-entity.minable = { mining_time = 0.1, result = "robot-recall-chest" } 
+entity.minable = { mining_time = 0.1, result = "robot-recall-chest" }
 entity.logistic_mode = "passive-provider"
 entity.inventory_size = settings.startup["recall-chest-size"].value
 entity.icon_size = 64
@@ -17,7 +17,7 @@ entity.open_sound = { filename = "__base__/sound/metallic-chest-open.ogg", volum
 entity.close_sound = { filename = "__base__/sound/metallic-chest-close.ogg", volume = 0.5 }
 entity.animation_sound = baseEnt.animation_sound
 entity.vehicle_impact_sound = baseEnt.vehicle_impact_sound
-entity.opened_duration = baseEnt.opened_duration 
+entity.opened_duration = baseEnt.opened_duration
 entity.collision_box = {{-0.35, -0.35}, {0.35, 0.35}}
 entity.selection_box = {{-0.5, -0.5}, {0.5, 0.5}}
 entity.damaged_trigger_effect = baseEnt.damaged_trigger_effect
@@ -66,13 +66,13 @@ entity.animation =
         }
       }
     }
-    
+
 entity.picture = entity.animation
 entity.circuit_wire_connection_point = circuit_connector_definitions["chest"].points
 entity.circuit_connector_sprites = circuit_connector_definitions["chest"].sprites
 entity.circuit_wire_max_distance = default_circuit_wire_max_distance
 entity.flags = {"placeable-player", "player-creation"}
-  
+
 
 
 
@@ -81,6 +81,7 @@ local item = table.deepcopy(data.raw.item["logistic-chest-requester"])
 item.name = "robot-recall-chest"
 -- item.entity = "robot-recall-chest"
 item.place_result = "robot-recall-chest"
+item.icon_size = 64
 item.icons = {
     {
         icon = "__robot-recall__/graphics/icons/robot-recall-chest.png"
@@ -98,6 +99,6 @@ table.insert(data.raw["technology"]["logistic-robotics"].effects, {type="unlock-
 
 
 if __DebugAdapter then
-  local variables = require("__debugadapter__/variables.lua") 
+  local variables = require("__debugadapter__/variables.lua")
 end
 data:extend{item, entity, recipe}

@@ -6,7 +6,7 @@ local baseEnt = data.raw["logistic-container"]["logistic-chest-passive-provider"
 
 entity.name = "robot-redistribute-chest"
 entity.order = "logistic-container"
-entity.minable = { mining_time = 0.1, result = "robot-redistribute-chest" } 
+entity.minable = { mining_time = 0.1, result = "robot-redistribute-chest" }
 entity.logistic_mode = "requester"
 entity.inventory_size = 40
 entity.logistic_slots_count = 40
@@ -67,13 +67,13 @@ entity.animation =
         }
       }
     }
-    
+
 entity.picture = entity.animation
 entity.circuit_wire_connection_point = circuit_connector_definitions["chest"].points
 entity.circuit_connector_sprites = circuit_connector_definitions["chest"].sprites
 entity.circuit_wire_max_distance = default_circuit_wire_max_distance
 entity.flags = {"placeable-player", "player-creation"}
-  
+
 
 
 
@@ -82,6 +82,7 @@ local item = table.deepcopy(data.raw.item["logistic-chest-requester"])
 item.name = "robot-redistribute-chest"
 -- item.entity = "robot-redistribute-chest"
 item.place_result = "robot-redistribute-chest"
+item.icon_size = 64
 item.icons = {
     {
         icon = "__robot-recall__/graphics/icons/robot-redistribute-chest.png"
@@ -100,7 +101,7 @@ table.insert(data.raw["technology"]["logistic-robotics"].effects, {type="unlock-
 
 if __DebugAdapter then
   local variables = require("__debugadapter__/variables.lua")
-    
+
   -- prepare debug metatables here
 end
 data:extend{item, entity, recipe}
